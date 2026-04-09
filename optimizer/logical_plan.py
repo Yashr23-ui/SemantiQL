@@ -1,5 +1,3 @@
-# logical_plan.py
-
 class LogicalPlanGenerator:
     def generate(self, ast):
         # SCAN node
