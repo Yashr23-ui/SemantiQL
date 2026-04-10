@@ -1,4 +1,8 @@
-from schema import schema
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
+from semantic.schema import schema
 
 
 # -------------------------------
@@ -72,6 +76,8 @@ def check_table(table, result):
 # -------------------------------
 def check_columns(ast, table, result):
     for col in ast["columns"]:
+        if col == "*":
+            continue
         if col not in schema[table]:
             add_error(result, f"Column '{col}' not found in table '{table}'")
 
@@ -81,22 +87,18 @@ def check_columns(ast, table, result):
 # -------------------------------
 def validate_condition(condition, table, result):
 
-    # Logical condition (AND / OR)
     if condition.get("type") == "LOGICAL":
         validate_condition(condition["left"], table, result)
         validate_condition(condition["right"], table, result)
 
-    # Simple condition
     else:
         col = condition["column"]
         value = condition["value"]
 
-        # Column check
         if col not in schema[table]:
             add_error(result, f"Column '{col}' not found in table '{table}'")
             return
 
-        # Type check
         col_type = schema[table][col]
         val_type = get_type(value)
 
@@ -127,7 +129,6 @@ def analyze_conditions(condition, result):
 
     column_map = {}
 
-    # Group conditions by column
     for cond in conditions_list:
         col = cond["column"]
         op = cond["operator"]
@@ -138,7 +139,6 @@ def analyze_conditions(condition, result):
 
         column_map[col].append((op, val))
 
-    # Analyze each column
     for col, conds in column_map.items():
         greater_vals = []
         less_vals = []
@@ -146,7 +146,7 @@ def analyze_conditions(condition, result):
 
         for op, val in conds:
             if not isinstance(val, int):
-                continue  # only numeric comparison
+                continue
 
             if op in [">", ">="]:
                 greater_vals.append(val)
@@ -155,22 +155,17 @@ def analyze_conditions(condition, result):
             elif op == "=":
                 equal_vals.append(val)
 
-        # 🔴 Contradiction check
         if greater_vals and less_vals:
             if max(greater_vals) > min(less_vals):
                 add_error(result, f"Contradiction detected in column '{col}'")
 
-        # 🔴 Equality contradiction
         if equal_vals:
             eq = equal_vals[0]
-
             if greater_vals and eq <= max(greater_vals):
                 add_error(result, f"Contradiction detected in column '{col}'")
-
             if less_vals and eq >= min(less_vals):
                 add_error(result, f"Contradiction detected in column '{col}'")
 
-        # 🟡 Redundant conditions
         if len(greater_vals) > 1:
             strongest = max(greater_vals)
             for val in greater_vals:

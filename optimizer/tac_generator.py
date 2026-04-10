@@ -27,6 +27,10 @@ class ThreeACGenerator:
         return temp
 
     def generate(self, ast):
+        # Reset state each time generate() is called
+        self.temp_count = 0
+        self.code = []
+
         table = ast["table"]
         columns = ast["columns"]
         condition = ast.get("condition")
@@ -51,33 +55,33 @@ class ThreeACGenerator:
         return self.code
 
 
-# -------- Example Input --------
-input_data = {
-    "status": "VALID",
-    "validated_ast": {
-        "type": "SELECT_QUERY",
-        "columns": ["name"],
-        "table": "students",
-        "condition": {
-            "type": "LOGICAL",
-            "operator": "AND",
-            "left": {
-                "column": "marks",
-                "operator": ">",
-                "value": 50
-            },
-            "right": {
-                "column": "age",
-                "operator": "<",
-                "value": 25
+# -------- Example Run --------
+if __name__ == "__main__":
+    input_data = {
+        "status": "VALID",
+        "validated_ast": {
+            "type": "SELECT_QUERY",
+            "columns": ["name"],
+            "table": "students",
+            "condition": {
+                "type": "LOGICAL",
+                "operator": "AND",
+                "left": {
+                    "column": "marks",
+                    "operator": ">",
+                    "value": 50
+                },
+                "right": {
+                    "column": "age",
+                    "operator": "<",
+                    "value": 25
+                }
             }
         }
     }
-}
 
-# -------- Run Generator --------
-generator = ThreeACGenerator()
-tac = generator.generate(input_data["validated_ast"])
+    generator = ThreeACGenerator()
+    tac = generator.generate(input_data["validated_ast"])
 
-for line in tac:
-    print(line)
+    for line in tac:
+        print(line)

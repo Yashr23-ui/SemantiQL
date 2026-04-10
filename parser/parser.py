@@ -1,6 +1,6 @@
 # parser.py
 
-from ast_builder import SelectQuery, BinaryCondition, Comparison
+from parser.ast_builder import SelectQuery, BinaryCondition, Comparison
 
 
 class Parser:
