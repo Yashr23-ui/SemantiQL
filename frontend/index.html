@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SemantiQL — SQL Compiler Pipeline</title>
+    <meta name="description" content="SemantiQL is an interactive SQL compiler pipeline visualizer. Enter a SQL query and watch it pass through lexing, parsing, semantic analysis, TAC generation, and query planning in real time.">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+
+<div class="noise-overlay"></div>
+
+<div class="app-container">
+
+    <!-- ===== HEADER ===== -->
+    <header class="site-header">
+        <div class="header-left">
+            <div class="logo-mark">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                    <path d="M14 2L4 8V20L14 26L24 20V8L14 2Z" fill="url(#grad1)" opacity="0.9"/>
+                    <path d="M10 12L14 10L18 12V16L14 18L10 16V12Z" fill="white" opacity="0.9"/>
+                    <defs>
+                        <linearGradient id="grad1" x1="4" y1="2" x2="24" y2="26" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#60a5fa"/>
+                            <stop offset="100%" stop-color="#a78bfa"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+            <div class="brand">
+                <h1>SemantiQL</h1>
+                <span class="version-badge">v1.0</span>
+            </div>
+        </div>
+        <p class="tagline">SQL Compiler Pipeline Visualizer</p>
+        <div class="header-right">
+            <span class="kbd-hint"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> to compile</span>
+        </div>
+    </header>
+
+    <!-- ===== PIPELINE STAGES BAR ===== -->
+    <div class="pipeline-bar" id="pipeline-bar">
+        <div class="pipeline-stage" id="stage-lexer" data-stage="lexer">
+            <div class="stage-dot"></div>
+            <div class="stage-info">
+                <span class="stage-label">Lexer</span>
+                <span class="stage-sublabel">Tokenization</span>
+            </div>
+        </div>
+        <div class="pipeline-connector"></div>
+        <div class="pipeline-stage" id="stage-parser" data-stage="parser">
+            <div class="stage-dot"></div>
+            <div class="stage-info">
+                <span class="stage-label">Parser</span>
+                <span class="stage-sublabel">AST Builder</span>
+            </div>
+        </div>
+        <div class="pipeline-connector"></div>
+        <div class="pipeline-stage" id="stage-semantic" data-stage="semantic">
+            <div class="stage-dot"></div>
+            <div class="stage-info">
+                <span class="stage-label">Semantic</span>
+                <span class="stage-sublabel">Validation</span>
+            </div>
+        </div>
+        <div class="pipeline-connector"></div>
+        <div class="pipeline-stage" id="stage-tac" data-stage="tac">
+            <div class="stage-dot"></div>
+            <div class="stage-info">
+                <span class="stage-label">TAC</span>
+                <span class="stage-sublabel">IR Gen</span>
+            </div>
+        </div>
+        <div class="pipeline-connector"></div>
+        <div class="pipeline-stage" id="stage-plan" data-stage="plan">
+            <div class="stage-dot"></div>
+            <div class="stage-info">
+                <span class="stage-label">Query Plan</span>
+                <span class="stage-sublabel">Optimizer</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <main class="main-grid">
+
+        <!-- LEFT: SQL Input Panel -->
+        <section class="input-panel glass-panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <span class="panel-icon">⌨</span>
+                    <h2>SQL Query</h2>
+                </div>
+                <button id="run-btn" class="compile-btn" title="Compile Query (Ctrl+Enter)">
+                    <span class="btn-icon">▶</span>
+                    <span class="btn-text">Compile</span>
+                </button>
+            </div>
+
+            <div class="editor-wrapper">
+                <div class="editor-gutter" id="editor-gutter">1</div>
+                <textarea id="sql-input" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"
+                    placeholder="SELECT name FROM students WHERE marks > 50">SELECT name FROM students WHERE marks > 50 AND age < 25</textarea>
+            </div>
+
+            <div class="editor-footer">
+                <span id="char-count" class="meta-info">0 chars</span>
+                <div id="status-badge" class="status-badge hidden"></div>
+            </div>
+
+            <!-- Sample Queries -->
+            <div class="samples-section">
+                <p class="samples-label">Quick samples:</p>
+                <div class="samples-list">
+                    <button class="sample-chip" data-query="SELECT * FROM students">SELECT *</button>
+                    <button class="sample-chip" data-query="SELECT name, age FROM students WHERE marks > 75">WHERE marks</button>
+                    <button class="sample-chip" data-query="SELECT name FROM students WHERE marks > 50 AND age < 25">AND condition</button>
+                    <button class="sample-chip" data-query="SELECT name FROM students WHERE marks > 60 OR age = 18">OR condition</button>
+                    <button class="sample-chip" data-query="SELECT name FROM students WHERE name = 'John'">String match</button>
+                </div>
+            </div>
+
+            <!-- Schema Reference -->
+            <div class="schema-card">
+                <p class="schema-title">Schema Reference</p>
+                <div class="schema-table">
+                    <div class="schema-row header">
+                        <span>Table</span><span>Column</span><span>Type</span>
+                    </div>
+                    <div class="schema-row"><span>students</span><span>id</span><span class="type-badge int">INT</span></div>
+                    <div class="schema-row"><span></span><span>name</span><span class="type-badge varchar">VARCHAR</span></div>
+                    <div class="schema-row"><span></span><span>marks</span><span class="type-badge int">INT</span></div>
+                    <div class="schema-row"><span></span><span>age</span><span class="type-badge int">INT</span></div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- RIGHT: Results Dashboard -->
+        <section class="dashboard-panel glass-panel">
+
+            <!-- Tabs -->
+            <nav class="tab-nav" role="tablist">
+                <button class="tab-btn active" data-tab="tokens" role="tab" aria-selected="true" id="tab-tokens">
+                    <span class="tab-icon">⬡</span> Tokens
+                </button>
+                <button class="tab-btn" data-tab="ast" role="tab" aria-selected="false" id="tab-ast">
+                    <span class="tab-icon">⬡</span> AST
+                </button>
+                <button class="tab-btn" data-tab="semantic" role="tab" aria-selected="false" id="tab-semantic">
+                    <span class="tab-icon">⬡</span> Semantic
+                </button>
+                <button class="tab-btn" data-tab="tac" role="tab" aria-selected="false" id="tab-tac">
+                    <span class="tab-icon">⬡</span> TAC
+                </button>
+                <button class="tab-btn" data-tab="plan" role="tab" aria-selected="false" id="tab-plan">
+                    <span class="tab-icon">⬡</span> Query Plan
+                </button>
+                <div class="tab-slider" id="tab-slider"></div>
+            </nav>
+
+            <!-- Tab Content -->
+            <div class="tab-body">
+
+                <!-- Tokens Tab -->
+                <div id="tokens-tab" class="tab-pane active" role="tabpanel">
+                    <div class="tab-toolbar">
+                        <span class="tab-desc">Lexical tokens produced by the tokenizer</span>
+                        <button class="copy-btn" id="copy-tokens" title="Copy tokens as JSON">⎘ Copy</button>
+                    </div>
+                    <div class="tokens-grid" id="tokens-grid">
+                        <div class="empty-state">
+                            <div class="empty-icon">◈</div>
+                            <p>Run a query to see tokens</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AST Tab -->
+                <div id="ast-tab" class="tab-pane" role="tabpanel">
+                    <div class="tab-toolbar">
+                        <span class="tab-desc">Abstract Syntax Tree (JSON representation)</span>
+                        <button class="copy-btn" id="copy-ast" title="Copy AST as JSON">⎘ Copy</button>
+                    </div>
+                    <pre id="ast-output" class="code-block"><span class="empty-state-inline">Run a query to see the AST</span></pre>
+                </div>
+
+                <!-- Semantic Tab -->
+                <div id="semantic-tab" class="tab-pane" role="tabpanel">
+                    <div class="tab-toolbar">
+                        <span class="tab-desc">Semantic validation results</span>
+                    </div>
+                    <div id="semantic-status" class="semantic-banner empty">
+                        <span class="banner-icon">◈</span>
+                        <span class="banner-text">Run a query to validate</span>
+                    </div>
+                    <div class="semantic-lists" id="semantic-lists">
+                        <div class="sem-section" id="errors-section" style="display:none">
+                            <h3 class="sem-heading error-heading">⚠ Errors</h3>
+                            <ul id="semantic-errors" class="sem-list error-list"></ul>
+                        </div>
+                        <div class="sem-section" id="warnings-section" style="display:none">
+                            <h3 class="sem-heading warning-heading">◆ Warnings</h3>
+                            <ul id="semantic-warnings" class="sem-list warning-list"></ul>
+                        </div>
+                        <div id="sem-valid-details" style="display:none">
+                            <div class="sem-check-item"><span class="check">✓</span> Table reference validated</div>
+                            <div class="sem-check-item"><span class="check">✓</span> Column names verified</div>
+                            <div class="sem-check-item"><span class="check">✓</span> Type compatibility checked</div>
+                            <div class="sem-check-item"><span class="check">✓</span> WHERE conditions validated</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAC Tab -->
+                <div id="tac-tab" class="tab-pane" role="tabpanel">
+                    <div class="tab-toolbar">
+                        <span class="tab-desc">Three Address Code — intermediate representation</span>
+                        <button class="copy-btn" id="copy-tac" title="Copy TAC">⎘ Copy</button>
+                    </div>
+                    <div class="tac-container" id="tac-container">
+                        <div class="empty-state">
+                            <div class="empty-icon">◈</div>
+                            <p>Run a query to see TAC</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Plan Tab -->
+                <div id="plan-tab" class="tab-pane" role="tabpanel">
+                    <div class="tab-toolbar">
+                        <span class="tab-desc">Relational algebra execution plan</span>
+                        <div class="plan-toggle-group">
+                            <label class="toggle-label">
+                                <input type="radio" name="planType" value="logical" checked id="plan-logical"> Logical
+                            </label>
+                            <label class="toggle-label">
+                                <input type="radio" name="planType" value="optimized" id="plan-optimized"> Optimized
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mermaid-wrapper">
+                        <div class="mermaid" id="plan-mermaid">
+graph TD
+    A["Run a query\nto see plan"]
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+</div>
+
+<!-- Ripple / Success Overlay -->
+<div class="success-flash" id="success-flash"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

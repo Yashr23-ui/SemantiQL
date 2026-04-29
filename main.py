@@ -241,7 +241,7 @@ def run_pipeline(query: str):
 
 def print_supported_queries():
     divider("=")
-    print("  SemantiQL — Phase 2  |  Supported Query Reference")
+    print("  SemantiQL — Final Version  |  Supported Query Reference")
     divider("=")
     print("""
   The following SQL query patterns are supported in this phase:
@@ -278,7 +278,7 @@ def print_supported_queries():
   Table   : students
   Columns : id (INT), name (VARCHAR), marks (INT), age (INT)
 
-  NOT YET SUPPORTED (Phase 3)
+  OUT OF SCOPE (Not Supported)
   ----------------------------
   JOIN, subqueries, GROUP BY, HAVING, ORDER BY,
   LIMIT, DISTINCT, aggregate functions (COUNT, AVG, MAX...)

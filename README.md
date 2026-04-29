@@ -88,9 +88,11 @@ Python
 
 Git & GitHub for version control
 
-Streamlit (planned for visualization)
+FastAPI for backend API serving
 
-Graphviz / NetworkX for query plan visualization
+HTML/CSS/JS (Vanilla) for interactive Web Dashboard
+
+Mermaid.js for query execution plan visualization
 
 Learning Outcomes
 This project helps understand:
@@ -106,4 +108,4 @@ Intermediate code generation
 Query optimization techniques
 
 Status
-🚧 Currently in Phase 2 – Core Implementation
+✅ Final Version – Core Implementation & Web Dashboard Complete
